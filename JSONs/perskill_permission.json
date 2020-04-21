@@ -1,0 +1,35 @@
+{
+  "type" : "generic",
+  "filters": [
+    // filter one: Skill1
+	// if( (request.contain('Ardalan') || request.contain('949')) && (Skill_ID == 'UntrustedSkill_ID1'))
+	{
+	 "keywords": {
+        "include_or": [
+          "Ardalan",
+		  "949"
+        ]
+      },
+      "Skill_ID": {
+        "include_or": [
+          "UntrustedSkill_ID1",
+        ]
+      }
+    },
+    // filter two: Skill2
+	// if( ((request.contain('@uci.ed')) && (Skill_ID == 'UntrustedSkill_ID2'))
+	{
+	 "keywords": {
+        "include_or": [
+          "@uci.ed"
+        ]
+      },
+      "Skill_ID": {
+        "include_or": [
+          "UntrustedSkill_ID2",
+        ]
+      }
+    },
+	
+}
+	

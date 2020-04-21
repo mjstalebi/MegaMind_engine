@@ -1,0 +1,80 @@
+{
+  "type" : "generic",
+  "filters": [
+    {
+      "keywords": {
+        "include_or": [
+          "buy",
+	  "order"
+        ]
+      },
+      "Speaker_ID": {
+        "include_or": [
+          "kid1_ID1",
+          "kid2_ID2" 
+        ]
+      }
+	},  
+	
+	{
+      "keywords": {
+        "exclude_and": [
+          "alarm",
+		  "whish list"
+        ]
+      },
+      "time": {
+        "include_or": [
+          {
+            "start": "01:00",
+            "end": "07:00"
+          }
+        ]
+      },
+      "Skill_ID": {
+        "exclude_and": [
+          "play_lolibi_ID"
+        ]
+      },
+      "Speaker_ID": {
+        "include_or": [
+          "kid1_ID1",
+          "kid2_ID2",
+	  "Javad"
+        ]
+      }
+    },
+	{
+
+      "Skill_ID": {
+        "include_or": [
+          "BankingSkill_ID",
+	  "AdultStories_ID",
+	  "Uber"
+		  
+        ]
+      },
+      "Speaker_ID": {
+        "include_or": [
+          "kid1_ID1",
+          "kid2_ID2"
+        ]
+      }
+    },
+	{
+      "Skill_ID": {
+        "exclude_and": [
+          "game1_ID",
+		  "KidsStoried_ID"
+		  
+        ]
+      },
+      "Speaker_ID": {
+        "include_or": [
+          "kid1_ID1",
+          "kid2_ID2"
+        ]
+      }
+    }
+  ]
+}

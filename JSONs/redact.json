@@ -1,0 +1,20 @@
+{
+  "type" : "generic",
+  "filters": [
+    {
+      "keywords": {
+        "include_or": [
+          "ardalan",
+	  "949",
+	  "javad"
+        ]
+      },
+	  "Skill_ID": {
+        "exclude_and": [
+          "TrustedSkill_ID1",
+          "TrustedSkill_ID2"
+        ]
+      }
+     }
+   ]
+}

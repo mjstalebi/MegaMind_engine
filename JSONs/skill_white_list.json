@@ -1,0 +1,16 @@
+{
+  "type" : "generic",
+  "filters": [
+    // filter one: Skill exclude_and
+	// if( !(Skill_ID == 'TrustedSkill_ID1') && !(Skill_ID == 'TrustedSkill_ID2'))
+	{
+      "Skill_ID": {
+        "exclude_and": [
+          "TrustedSkill_ID1",
+		  "TrustedSkill_ID2"
+		  
+        ]
+      }
+    }
+}
+	

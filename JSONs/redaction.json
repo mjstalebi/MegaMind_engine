@@ -1,0 +1,20 @@
+{
+  "type" : "generic",
+  "filters": [
+    // filter one: it does not allow kids to order or buy anything
+	// if( (request.contain('Ardalan') || request.contain('949')) && ( !(Skill_ID == 'TrustedSkill_ID1') && !(Skill_ID == 'TrustedSkill_ID2')) )
+    {
+      "keywords": {
+        "include_or": [
+          "Ardalan",
+		  "949"
+        ]
+      },
+	  "Skill_ID": {
+        "exclude_and": [
+          "TrustedSkill_ID1",
+          "TrustedSkill_ID2"
+        ]
+      }
+	}
+}

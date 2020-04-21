@@ -1,0 +1,125 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/1999/REC-html401-19991224/strict.dtd">
+<html>
+<head>
+<META http-equiv=Content-Type content="text/html; charset=UTF-8">
+<title>Exported from Notepad++</title>
+<style type="text/css">
+span {
+	font-family: 'Courier New';
+	font-size: 10pt;
+	color: #000000;
+}
+.sc0 {
+}
+.sc2 {
+	color: #800000;
+}
+.sc4 {
+	color: #8000FF;
+}
+.sc8 {
+}
+.sc13 {
+	color: #FFFF80;
+	background: #FF0000;
+}
+</style>
+</head>
+<body>
+<div style="float: left; white-space: pre; line-height: 1; background: #FFFFFF; "><span class="sc13">// If any of these filters is true the extention will trigger. It is OR logic between filters </span><span class="sc0">
+</span><span class="sc13">//</span><span class="sc0">
+</span><span class="sc13">// We have two types of extentions, 'generic' and 'companion'. generic extentions can have verity of filters for trigger</span><span class="sc0">
+</span><span class="sc13">// Companion skills only can have one filter on SKILL_ID.</span><span class="sc0">
+</span><span class="sc13">//</span><span class="sc0">
+</span><span class="sc13">// include_or means at least one of the condintions should be true</span><span class="sc0">
+</span><span class="sc13">// exclude_and means non of the condintions should be true</span><span class="sc0">
+
+
+</span><span class="sc8">{</span><span class="sc0">
+  </span><span class="sc4">"type"</span><span class="sc0"> </span><span class="sc8">:</span><span class="sc0"> </span><span class="sc2">"generic"</span><span class="sc8">,</span><span class="sc0">
+  </span><span class="sc4">"filters"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+    </span><span class="sc13">// filter one: it does not allow kids to order or buy anything</span><span class="sc0">
+    </span><span class="sc13">// if( (request.contain('Buy') || request.contain('Order')) &amp;&amp; ( (Speaker_ID == 'kid1_ID1')||(Speaker_ID == 'kid2_ID1')) )</span><span class="sc0">
+    </span><span class="sc8">{</span><span class="sc0">
+      </span><span class="sc4">"keywords"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">{</span><span class="sc0">
+        </span><span class="sc4">"include_or"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+          </span><span class="sc2">"Buy"</span><span class="sc8">,</span><span class="sc0">
+          </span><span class="sc2">"Order"</span><span class="sc0">
+        </span><span class="sc8">]</span><span class="sc0">
+      </span><span class="sc8">},</span><span class="sc0">
+      </span><span class="sc4">"Speaker_ID"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">{</span><span class="sc0">
+        </span><span class="sc4">"include_or"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+          </span><span class="sc2">"kid1_ID1"</span><span class="sc8">,</span><span class="sc0">
+          </span><span class="sc2">"kid2_ID2"</span><span class="sc0">
+        </span><span class="sc8">]</span><span class="sc0">
+      </span><span class="sc8">}</span><span class="sc0">
+    </span><span class="sc8">},</span><span class="sc0">  
+    </span><span class="sc13">// filter two: it limits the usage of system at nights</span><span class="sc0">
+    </span><span class="sc13">// if( ( !(request.contain('alarm')) &amp;&amp; !(request.contain('whish list')) ) &amp;&amp; ( 21:00&lt;time&lt;24:00) &amp;&amp; ...</span><span class="sc0">
+    </span><span class="sc13">// !(Skill_ID == "play_lolibi_ID") &amp;&amp; ( (Speaker_ID == 'kid1_ID1')||(Speaker_ID == 'kid2_ID1')) )</span><span class="sc0">
+    
+    </span><span class="sc8">{</span><span class="sc0">
+      </span><span class="sc4">"keywords"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">{</span><span class="sc0">
+        </span><span class="sc4">"exclude_and"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+          </span><span class="sc2">"alarm"</span><span class="sc8">,</span><span class="sc0">
+          </span><span class="sc2">"whish list"</span><span class="sc0">
+        </span><span class="sc8">]</span><span class="sc0">
+      </span><span class="sc8">},</span><span class="sc0">
+      </span><span class="sc4">"time"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">{</span><span class="sc0">
+        </span><span class="sc4">"include_or"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+          </span><span class="sc8">{</span><span class="sc0">
+            </span><span class="sc4">"start"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc2">"21:00"</span><span class="sc8">,</span><span class="sc0">
+            </span><span class="sc4">"end"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc2">"24:00"</span><span class="sc0">
+          </span><span class="sc8">}</span><span class="sc0">
+        </span><span class="sc8">]</span><span class="sc0">
+      </span><span class="sc8">},</span><span class="sc0">
+      </span><span class="sc4">"Skill_ID"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">{</span><span class="sc0">
+        </span><span class="sc4">"exclude_and"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+          </span><span class="sc2">"play_lolibi_ID"</span><span class="sc8">,</span><span class="sc0">
+        </span><span class="sc8">]</span><span class="sc0">
+      </span><span class="sc8">},</span><span class="sc0">
+      </span><span class="sc4">"Speaker_ID"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">{</span><span class="sc0">
+        </span><span class="sc4">"include_or"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+          </span><span class="sc2">"kid1_ID1"</span><span class="sc8">,</span><span class="sc0">
+          </span><span class="sc2">"kid2_ID2"</span><span class="sc0">
+        </span><span class="sc8">]</span><span class="sc0">
+      </span><span class="sc8">}</span><span class="sc0">
+    </span><span class="sc8">},</span><span class="sc0">
+    </span><span class="sc13">// filter three: it limits the usage of certain apps</span><span class="sc0">
+    </span><span class="sc13">// if( (Skill_ID == "BankingSkill_ID" || Skill_ID =="AdultStories_ID") &amp;&amp; ( (Speaker_ID == 'kid1_ID1')||(Speaker_ID == 'kid2_ID1')) ) </span><span class="sc0">
+    </span><span class="sc8">{</span><span class="sc0">
+      </span><span class="sc4">"Skill_ID"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">{</span><span class="sc0">
+        </span><span class="sc4">"include_or"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+          </span><span class="sc2">"BankingSkill_ID"</span><span class="sc8">,</span><span class="sc0">
+          </span><span class="sc2">"AdultStories_ID"</span><span class="sc0">
+          
+        </span><span class="sc8">]</span><span class="sc0">
+      </span><span class="sc8">},</span><span class="sc0">
+      </span><span class="sc4">"Speaker_ID"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">{</span><span class="sc0">
+        </span><span class="sc4">"include_or"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+          </span><span class="sc2">"kid1_ID1"</span><span class="sc8">,</span><span class="sc0">
+          </span><span class="sc2">"kid2_ID2"</span><span class="sc0">
+        </span><span class="sc8">]</span><span class="sc0">
+      </span><span class="sc8">}</span><span class="sc0">
+    </span><span class="sc8">},</span><span class="sc0">
+    </span><span class="sc13">// filter three(Harsher Alternative): it only allow certain apps</span><span class="sc0">
+    </span><span class="sc13">// if( !(Skill_ID == "game1_ID") &amp;&amp; !(Skill_ID =="KidsStoried_ID") ) &amp;&amp; ( (Speaker_ID == 'kid1_ID1')||(Speaker_ID == 'kid2_ID1')) ) </span><span class="sc0">
+
+    </span><span class="sc8">{</span><span class="sc0">
+      </span><span class="sc4">"Skill_ID"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">{</span><span class="sc0">
+        </span><span class="sc4">"exclude_and"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+          </span><span class="sc2">"game1_ID"</span><span class="sc8">,</span><span class="sc0">
+          </span><span class="sc2">"KidsStoried_ID"</span><span class="sc0">
+          
+        </span><span class="sc8">]</span><span class="sc0">
+      </span><span class="sc8">},</span><span class="sc0">
+      </span><span class="sc4">"Speaker_ID"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">{</span><span class="sc0">
+        </span><span class="sc4">"include_or"</span><span class="sc8">:</span><span class="sc0"> </span><span class="sc8">[</span><span class="sc0">
+          </span><span class="sc2">"kid1_ID1"</span><span class="sc8">,</span><span class="sc0">
+          </span><span class="sc2">"kid2_ID2"</span><span class="sc0">
+        </span><span class="sc8">]</span><span class="sc0">
+      </span><span class="sc8">}</span><span class="sc0">
+    </span><span class="sc8">}</span><span class="sc0">
+  </span><span class="sc8">]</span><span class="sc0">
+</span><span class="sc8">}</span></div></body>
+</html>

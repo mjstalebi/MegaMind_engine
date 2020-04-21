@@ -1,0 +1,19 @@
+{
+  "requests" :{
+     "num_of_items":3,
+     "items": [
+	"Open Skype",
+	"Call mom",
+	"add dad to the session"
+     ]
+  },
+  "responses" :{
+     "num_of_items":2,
+     "items": [
+	"Wellcome to Skype",
+	"Sure"
+     ]
+  },
+  "Speakeer_ID" : "kid1_ID1",
+  "Skill_ID" : "Skype" 
+}

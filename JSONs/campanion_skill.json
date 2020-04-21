@@ -1,0 +1,13 @@
+{
+  "type" : "companion",
+  "filters": [
+    // filter one:
+	// if( ((Skill_ID == CampanionSkill_ID1'))
+	{
+      "Skill_ID": {
+        "include_or": [
+          "CompanionSkill_ID"
+        ]
+      }
+    }
+}
