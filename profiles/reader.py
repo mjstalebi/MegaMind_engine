@@ -1,6 +1,6 @@
 import os
 
-path = 'pipe_test.txt' 
+path = '/tmp/mysession/0/pipe_test.txt'
 
 
 while True:

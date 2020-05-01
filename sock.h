@@ -11,6 +11,9 @@
 #define PortNumber_start_speech_4      9896
 #define PortNumber_end_speech_4      9898
 #define PortNumber_alexa_response     9900
+#define PortNumber_text_start_req      9902
+#define PortNumber_start_session_notice 9904
+#define PortNumber_end_session_notice 9906
 #define MaxConnects        8
 #define BuffSize         256
 #define ConversationLen    3

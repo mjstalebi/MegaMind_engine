@@ -8,6 +8,7 @@ class Sandbox_pool:
 			s = Sandbox()
 			self.sandboxs.append(s)
 	def initialize(self):
+		os.system('rm -rf /tmp/mysession')
 		for i in range(0,self.num_of_sandboxs):
 			self.sandboxs[i].initialize(i)
 		return
@@ -39,6 +40,13 @@ class Sandbox:
 		os.system('cp ./Commu.py ' + self.dir)
 		os.system('cp ./ready.txt ' + self.dir)
 		os.system('cp ./Session.py ' + self.dir)
+		path = self.dir + '/in_use.txt' 
+		mode = 0o600
+		os.mkfifo( path , mode)
+		path = self.dir + '/data.txt' 
+		mode = 0o600
+		os.mkfifo( path , mode)
+	
 		newpid = os.fork()
 		if newpid == 0:
 			#os.system('firejail --profile=profiles/'+ str(self.id) +'.profile python3.7 ~/run_time.py')
@@ -56,60 +64,72 @@ class Sandbox:
 		self.pid = newpid
 		self.initialized = True
 		self.in_use = False
-		self.update_inuse()
-		self.update_new_data(False)
+		#self.update_inuse()
+		#self.update_new_data(False)
 		return
 	def execute(self,script):
 		os.system('cp ' + script + ' ' + self.dir + '/action.py')
 		self.in_use = True
 		self.update_inuse()
 		return
+#	def transfer_data(self , data):	
+#		print( 'transfering data')
+#		f = open( self.dir + '/data.txt', 'w+')
+#		f.write( data)
+#		f.close()
+#		self.update_new_data(True)
+#		return
 	def transfer_data(self , data):	
 		print( 'transfering data')
-		f = open( self.dir + '/data.txt', 'w+')
-		f.write( data)
-		self.update_new_data(True)
-		f.close()
-		return
-	def wait_for_response(self):
-		print( ' in wait for response:')	
-		f = open( self.dir + '/ready.txt', 'r')
-		lines = f.readlines()
-		line = lines[0]
-		while line == 'False':
-			f.seek(0,0)
-			lines = f.readlines()
-			if( len(lines) == 1):
-				line = lines[0]
-		f.close()
-		f = open( self.dir + '/ready.txt', 'w+')
-		print('()(() setting ready to False()()')
-		f.write('False')
-		f.close()
+		self.send_over_named_pipe(data,'data.txt')
 		return
 		
-	def get_response(self):
-		print( ' in get response:')	
-		f = open( self.dir + '/response.txt', 'r')
-		lines = f.readlines()
-		line = lines[0]
-		f.close()
-		return line
-			
-	def update_new_data(self , new_data):
-		print( 'in update newdata= ' + str(new_data))
-		f = open( self.dir + '/new_data.txt', 'w+')
-		f.write( str(new_data))
-		f.close()
-		return
+#	def wait_for_response(self):
+#		print( ' in wait for response:')	
+#		f = open( self.dir + '/ready.txt', 'r')
+#		lines = f.readlines()
+#		line = lines[0]
+#		while line == 'False':
+#			f.seek(0,0)
+#			lines = f.readlines()
+#			if( len(lines) == 1):
+#				line = lines[0]
+#		f.close()
+#		f = open( self.dir + '/ready.txt', 'w+')
+#		print('()(() setting ready to False()()')
+#		f.write('False')
+#		f.close()
+#		return
+#		
+#	def get_response(self):
+#		print( ' in get response:')	
+#		f = open( self.dir + '/response.txt', 'r')
+#		lines = f.readlines()
+#		line = lines[0]
+#		f.close()
+#		return line
+	def get_response_blocking(self):
+		a = self.recive_from_named_pipe('response.txt')
+		return a;	
+#	def update_new_data(self , new_data):
+#		print( 'in update newdata= ' + str(new_data))
+#		f = open( self.dir + '/new_data.txt', 'w+')
+#		f.write( str(new_data))
+#		f.close()
+#		return
 	def update_inuse(self):
 		print( 'in update inuse  self.in_use = ' + str(self.in_use))
-		f = open( self.dir + '/in_use.txt', 'w+')
-		f.write( str(self.in_use))
-		f.close()
+		#f = open( self.dir + '/in_use.txt', 'w+')
+		#f.write( str(self.in_use))
+		#f.close()
+		self.send_over_named_pipe('True','in_use.txt')
 		return
 		
 	def destroy(self):
+		path = self.dir + '/in_use.txt' 
+		os.unlink(path)
+		path = self.dir + '/data.txt' 
+		os.unlink(path)
 		print(    "bash kill_tree.sh " + str(self.pid))
 		os.system("bash kill_tree.sh " + str(self.pid))
 		os.system("rm -r " + self.dir)
@@ -119,4 +139,17 @@ class Sandbox:
 	def destroy_and_replace(self):
 		self.destroy()
 		self.initialize(self.id)
+	def send_over_named_pipe(self,data,name):
+		path = self.dir + '/' + name 
+		f = open(path , 'w')
+		f.write(data)
+		f.close()
+		return
+	def recive_from_named_pipe(self, name):
+		path = self.dir + '/' + name
+		f = open( path, 'r')
+		a = f.read()
+		f.close()
+		return a
+		
 

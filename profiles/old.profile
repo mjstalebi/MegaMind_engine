@@ -49,4 +49,4 @@ rlimit-cpu 123
 #Maximum file size
 rlimit-fsize 1024
 
-private /tmp/mysession/11
+private /tmp/mysession/9

@@ -1,19 +1,18 @@
 import os
+from time import sleep
+from Commu import Commu
+
+comm =  Commu()
+
 print('MegaMind extention runtime')
 
-f = open('/home/megamind/testfile.txt' , 'w')
-f.write(' It is a test from runtime')
 
-f = open ('in_use.txt' , 'r')
-lines = f.readlines()
-line = lines[0]
+a = comm.recive_from_named_pipe('in_use.txt')
+print(a)
 
-print("line = " + line)
 
-while line == 'False' :			
-	f.seek(0, 0)
-	lines = f.readlines()
-	if( len(lines) == 1):
-		line = lines[0]
-
-os.system('/bin/python3.7 action.py')
+#os.system('/bin/python3.7 action.py')
+pybin = '/bin/python3.7'
+arg1 = 'action.py'
+args = [pybin , arg1]
+os.execv(pybin , args )

@@ -36,7 +36,8 @@ class Extension:
 	
 
 def debug_log(*args, **kwargs):
-	print( "XXX "+" ".join(map(str,args))+" XXX", **kwargs)
+#	print( "XXX "+" ".join(map(str,args))+" XXX", **kwargs)
+	pass
 	return
 class Items:
 	def __init__(self, mydict = None):

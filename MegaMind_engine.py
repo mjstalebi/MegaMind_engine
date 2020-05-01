@@ -9,6 +9,9 @@ from Session import Extension
 from bcolors import bcolors
 from Sandbox import Sandbox
 from Sandbox import Sandbox_pool
+from time import sleep
+import os
+from mypipe import MyPipe
 
 port_start_speech = consts.PortNumber_start_speech_2
 port_end_speech = consts.PortNumber_end_speech_2
@@ -27,76 +30,56 @@ def debug_log(*args, **kwargs):
     print( "YYY "+" ".join(map(str,args))+" YYY", **kwargs)
 
 def wait_for_start_session_notice():
-	wait_on_port(consts.PortNumber_start_session_notice)
+	session_start_pipe.wait_on_pipe()
 
 def wait_for_end_session_notice():
-	wait_on_port(consts.PortNumber_end_session_notice)
+	session_end_pipe.wait_on_pipe()
 
 def wait_for_keyword_detection():
-	wait_on_port(consts.PortNumber_start)
+	kwd_pipe.wait_on_pipe()
 	return
-
-def wait_on_port(PortNum):
-	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		s.bind( (consts.Host,PortNum) )
-		s.listen()
-		conn, addr = s.accept()
-		with conn:
-			data= conn.recv(1024)
-			conn.close()
-			s.close()
-			return
 	
 
 def wait_for_payload():
-	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s: 
-		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-		s.bind( (consts.Host,consts.PortNumber_alexa_response) )
-		s.listen()
-		conn,addr = s.accept()
-		with conn:
-			#timeval = struct.pack('ll',1,0)
-			#conn.setsockopt(socket.SOL_SOCKET, socket.SO_RCVTIMEO, timeval)
-			data = conn.recv(4096)
-			conn.close()
-			s.close()
-			return data.decode()
+	data = payload_pipe.read_from_pipe()
+	return data
 
 def wait_for_speech_recognition_done():
-	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  
-		s.bind( (consts.Host,port_end_speech) )
-		s.listen()
-		conn,addr = s.accept()
-		with conn:
-			data = conn.recv(4096)
-			cmd = data.decode()
-			cmd.replace('.','')
-			cmd.replace('?','')
-			cmd.replace('!','')
-			conn.close()
-			s.close()
-			return cmd
+#	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+#		s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  
+#		s.bind( (consts.Host,port_end_speech) )
+#		s.listen()
+#		conn,addr = s.accept()
+#		with conn:
+#			data = conn.recv(4096)
+#			cmd = data.decode()
+#			cmd.replace('.','')
+#			cmd.replace('?','')
+#			cmd.replace('!','')
+#			conn.close()
+#			s.close()
+#			return cmd
+	cmd = speech_recog_end_pipe.read_from_pipe()
+	cmd.replace('.','')
+	cmd.replace('?','')
+	cmd.replace('!','')
+	return cmd
+	
 def send_cmd_to_sdk(cmd):
-	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:	
-		s.connect( (consts.Host,consts.PortNumber_MegaMindEngine) )
-		s.sendall(cmd.encode())
-		s.close()
-		return
+	resp_pipe.write_to_pipe(cmd+'\0')
 
 
 def start_speech_recognition():	
-	with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:	
-		s.connect( (consts.Host,port_start_speech) )
-		s.sendall("start".encode())
-		s.close()
-		return
+	speech_recog_start_pipe.write_to_pipe("s")
 
 def payload_thread(name):
 	print('payload start')
 	global recieved_response_signal
 	global current_session
+	global extensions
+	global extensions_resp_order
+	global active_extensions
+	global sandbox_pool 
 	while True:
 	#	print('before wait_for_payload')
 		payload = wait_for_payload()
@@ -116,6 +99,28 @@ def payload_thread(name):
 		print( ' token = ' + token_id )
 		current_session.responses.insert_new(caption)
 		recieved_response_signal = True
+		wfr_state_end_pipe.write_to_pipe("s")
+		for ext in extensions_resp_order:
+			if ext not in active_extensions:
+				print("evaluate: " , ext.name)
+				if(ext.evaluate(current_session)):
+					print("extension: " + ext.name  +" is true")
+					active_extensions.append(ext)
+					ext.sandbox = sandbox_pool.get_idle_sandbox()
+					ext.sandbox.execute(ext.script)
+		for ext in extensions_resp_order:
+		#for ext in active_extensions:
+			if ext in active_extensions:
+				print(" RESP: we need to forward session to extenstion " + ext.name )
+				session_dict = current_session.get_dictionary()
+				session_dict['req_resp'] = 'resp'
+				ext.sandbox.transfer_data(json.dumps(session_dict))
+				#ext.sandbox.wait_for_response()
+				#new_caption = ext.sandbox.get_response()
+				new_caption = ext.sandbox.get_response_blocking()
+				if( ext.verify_new_cmd(new_caption)):
+					caption = new_caption
+		print( ' new caption = ' + bcolors.OKBLUE + caption + bcolors.ENDC )
 		#while (recieved_response_signal == True):
 		#	pass
 			
@@ -128,6 +133,7 @@ def wait_for_listenning_thread(name):
 	while True:
 		wait_for_keyword_detection()
 		listen_event_signal = True
+		wfl_state_end_pipe.write_to_pipe("s")
 		while(listen_event_signal == True):
 			pass
 		
@@ -147,7 +153,7 @@ def start_session_notice_thread(name):
 
 		
 def end_session_notice_thread(name):
-	print("start_session_notice_thread")
+	print("end_session_notice_thread")
 	while True:
 		wait_for_end_session_notice()
 		if (( state == "wait_for_listenning") or ( state == "wait_for_response") ):
@@ -165,6 +171,7 @@ def start_session():
 	start_session_signal = True
 	print(bcolors.FAIL + "*************NEW SESSION****************"+ bcolors.ENDC)
 	first_req_of_session = True
+	idle_state_end_pipe.write_to_pipe("s")
 	while (start_session_signal == True):
 		pass
 	return
@@ -177,7 +184,8 @@ def end_session():
 		ext.sandbox.destroy_and_replace()
 	active_extensions = []
 	end_session_signal = True
-	
+	wfl_state_end_pipe.write_to_pipe("s")	
+	#wfr_state_end_pipe.write_to_pipe("s")	
 	print(bcolors.FAIL + "*************SESSION ENDS****************"+ bcolors.ENDC)
 	print(current_session.get_dictionary())
 	while (end_session_signal == True):
@@ -211,23 +219,36 @@ def get_user_cmd_and_send_it():
 		skill_id = local_skill_id_finder(cmd)
 		current_session.skill_id = skill_id
 	current_session.requests.insert_new(cmd)
-	for ext in extensions:
-		if ext not in active_extensions:
-			print("evaluate: " , ext.name)
-			if(ext.evaluate(current_session)):
-				print("extension: " + ext.name  +" is true")
-				active_extensions.append(ext)
-				ext.sandbox = sandbox_pool.get_idle_sandbox()
-				ext.sandbox.execute(ext.script)
-	for ext in active_extensions:
-		print("we need to forward session to extenstion " + ext.name )
-		session_dict = current_session.get_dictionary()
-		session_dict['req_resp'] = 'req'
-		ext.sandbox.transfer_data(json.dumps(session_dict))
-		ext.sandbox.wait_for_response()
-		new_cmd = ext.sandbox.get_response()
-		if( ext.verify_new_cmd(new_cmd)):
-			cmd = new_cmd
+	if (cmd != 'stop' ):
+		for ext in extensions:
+			if ext not in active_extensions:
+				print("evaluate: " , ext.name)
+				if(ext.evaluate(current_session)):
+					print("extension: " + ext.name  +" is true")
+					active_extensions.append(ext)
+					ext.sandbox = sandbox_pool.get_idle_sandbox()
+					ext.sandbox.execute(ext.script)
+#		for ext in extensions:
+#			if ext  in active_extensions:
+#				print("REQ: we need to forward session to extenstion " + ext.name )
+#				session_dict = current_session.get_dictionary()
+#				session_dict['req_resp'] = 'req'
+#				ext.sandbox.transfer_data(json.dumps(session_dict))
+#				ext.sandbox.wait_for_response()
+#				new_cmd = ext.sandbox.get_response()
+#				if( ext.verify_new_cmd(new_cmd)):
+#					cmd = new_cmd
+			
+		for ext in active_extensions:
+			print("REQ: we need to forward session to extenstion " + ext.name )
+			session_dict = current_session.get_dictionary()
+			session_dict['req_resp'] = 'req'
+			ext.sandbox.transfer_data(json.dumps(session_dict))
+			#ext.sandbox.wait_for_response()
+			#new_cmd = ext.sandbox.get_response()
+			new_cmd = ext.sandbox.get_response_blocking()
+			if( ext.verify_new_cmd(new_cmd)):
+				cmd = new_cmd
 			
 		
 	send_cmd_to_sdk(cmd)
@@ -238,15 +259,54 @@ def get_user_cmd_and_send_it():
 	return
 def main():
 	print('Welcome to MegaMind Engine')
-	
+	os.system('rm -rf /tmp/MegaMind')	
 	print('Initializing trigers')
 	global extensions
+	global extensions_resp_order
 	extensions = []
+	extensions_resp_order = []
 	global active_extensions
 	active_extensions = []
 	extensions.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
 	extensions.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
 	extensions.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
+
+	extensions_resp_order.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
+	extensions_resp_order.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
+	extensions_resp_order.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+	global kwd_pipe 
+	kwd_pipe = MyPipe('keyword_detection')
+	kwd_pipe.make()
+	global resp_pipe
+	resp_pipe  = MyPipe('MegaMind_engine_response')
+	resp_pipe.make()
+	global session_start_pipe
+	session_start_pipe  = MyPipe('session_start')
+	session_start_pipe.make()
+	global session_end_pipe
+	session_end_pipe  = MyPipe('session_end')
+	session_end_pipe.make()
+	global payload_pipe
+	payload_pipe  = MyPipe('payload')
+	payload_pipe.make()
+	global speech_recog_start_pipe
+	speech_recog_start_pipe = MyPipe('speech_recog_start')
+	speech_recog_start_pipe.make()
+	global speech_recog_end_pipe
+	speech_recog_end_pipe = MyPipe('speech_recog_end')
+	speech_recog_end_pipe.make()
+
+	global idle_state_end_pipe
+	idle_state_end_pipe = MyPipe('idle_state_end')
+	idle_state_end_pipe.make()
+
+	global wfl_state_end_pipe
+	wfl_state_end_pipe = MyPipe('wfl_state_end')
+	wfl_state_end_pipe.make()
+
+	global wfr_state_end_pipe
+	wfr_state_end_pipe = MyPipe('wfr_state_end')
+	wfr_state_end_pipe.make()
 
 	print('Starting threads')
 	th1 = threading.Thread(target=payload_thread, args=(1,), daemon=True)
@@ -268,12 +328,14 @@ def main():
 	sandbox_pool.initialize()
 	while True:
 		while ( state == "idle" ):
+			idle_state_end_pipe.wait_on_pipe()
 			if( start_session_signal == True ):
 				state = "wait_for_listenning"
 				start_session_signal = False
 				debug_log("idle -> wait_for_listenning")
 				break
 		while ( state == "wait_for_listenning" ):
+			wfl_state_end_pipe.wait_on_pipe()
 			if ( end_session_signal == True):
 				state = "idle"
 				end_session_signal = False
@@ -284,12 +346,14 @@ def main():
 				listen_event_signal = False
 				debug_log("wait_for_listenning -> get_cmd")
 				break
+
 		while ( state == "get_cmd" ):
 			get_user_cmd_and_send_it()
 			state = "wait_for_response"
 			debug_log("get_cmd -> wait_for_response")
 			break
 		while ( state == "wait_for_response"):
+			wfr_state_end_pipe.wait_on_pipe()
 			if( recieved_response_signal == True):
 				recieved_response_signal = False
 				state = "wait_for_listenning"
