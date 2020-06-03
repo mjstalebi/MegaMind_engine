@@ -1,0 +1,16 @@
+
+{
+  "type" : "generic",
+  "filters": [
+	
+      {
+      "Skill_ID": {
+        "include_or": [
+          "UntrustedSkill_ID1",
+		  "UntrustedSkill_ID2"
+		  
+        ]
+      }
+    }
+  ]
+}

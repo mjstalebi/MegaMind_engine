@@ -5,7 +5,7 @@ import json
 def pr(*args , **kwargs):
 	print( '**** ' + " ".join(map(str,args)) + " ****" , **kwargs)
 
-pr("redacting extention")
+pr("night mode extention")
 comm = Commu()
 comm.init_pipes()
 #comm.update_ready(False)
@@ -14,11 +14,8 @@ while True:
 	#session = comm.read_data()
 	session = comm.read_data_blocking()
 	#pr(session)
-	item = comm.get_item_of_interest(session)
-	print(item)
-	item = item.replace('john','bob')
-	item = item.replace('jack','alex')
-	comm.write_response(item)
+	#item = comm.get_item_of_interest(session)
+	comm.write_response('stop')
 	#comm.update_ready(True)
 
 	

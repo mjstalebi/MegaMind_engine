@@ -1,6 +1,7 @@
 import json
 import os
 from Time import Time
+from MegaNLP import MegaNLP
 
 class Extension:
 	def __init__(self , name="", rule_file_name="",script=""):
@@ -54,6 +55,9 @@ class Items:
 		self.items.append(new_str)
 		self.last_item = new_str
 		self.num_of_items += 1
+	def update_last(self,new_str):
+		self.items[self.num_of_items-1] = new_str
+		self.last_item = new_str
 	def get_dictionary(self):
 		self.dictionary['num_of_items'] = self.num_of_items
 		self.dictionary['items'] = self.items
@@ -70,6 +74,7 @@ class Session:
 		mytime.set_now()
 		self.time = mytime
 		self.dictionary = {}
+		self.nlp = MegaNLP()
 	def get_dictionary(self):
 		self.dictionary['requests'] = self.requests.get_dictionary()
 		self.dictionary['responses'] = self.responses.get_dictionary()
@@ -78,6 +83,36 @@ class Session:
 		self.dictionary['time'] = str(self.time)
 		return self.dictionary
 	
+	def parse_nlp_function(self,item):
+		index_start = item.find('(')
+		index_end = item.find(')')
+		substr1 = item[0:int(index_start)]
+		substr2 = item[int(index_start)+1:int(index_end)]
+		words = substr2.split()
+		outwords = []
+		outwords.append(substr1)
+		for word in words:
+			outwords.append(word)
+		return outwords
+
+	def evaluate_NLP(self,last_req,item):
+		nlp_parts = self.parse_nlp_function(item)
+		ret = []
+		if( nlp_parts[0] == 'contain' ):
+			if nlp_parts[1] in last_req:
+				ret.append(nlp_parts[1])
+				return ret
+		if( nlp_parts[0] == 'contain_first_name'):
+			return self.nlp.find_first_names(last_req)
+		if( nlp_parts[0] == 'contain_last_name'):
+			return self.nlp.find_last_names(last_req)
+		if( nlp_parts[0] == 'contain_similar'):
+			return self.nlp.find_similar(nlp_parts[1],last_req)
+		if( nlp_parts[0] == 'contain_synonym'):
+			return self.nlp.find_synonym(nlp_parts[1],last_req)
+		if( nlp_parts[0] == 'contain_antonym'):
+			return self.nlp.find_antonyms(nlp_parts[1],last_req)
+		return ret 
 	def evaluate_filter(self, filter_dict ):
 		debug_log('\n---------------')
 		debug_log('evaluating filter\n')
@@ -108,11 +143,13 @@ class Session:
 				for item in include_or_items:
 					debug_log(item)
 					if ( last_req != None ):
-						if (item in last_req):
+					#	if (item in last_req):
+						if (len(self.evaluate_NLP(last_req,item))>0):
 							include_or_evaluation = True
 							break
 					if ( last_resp != None):
-						if (item in last_resp):
+					#	if (item in last_resp):
+						if (len(self.evaluate_NLP(last_resp,item))>0):
 							include_or_evaluation = True
 							break
 					#if ((item in last_req) or (item in last_resp)):

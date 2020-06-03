@@ -28,11 +28,13 @@ end_session_signal = False
 first_req_of_session = False
 
 def log_time(mystr):
-	global test_file
+#	global test_file
+	test_file = open('/tmp/MegsTST.txt','a+')
 	milliseconds = int(round(time.time() * 1000)) 
 	#test_file.write(str(milliseconds) + '\t' + mystr +'\n')
 	test_file.write( mystr + '\t'+str(milliseconds)  + '\n')
 	test_file.flush()
+	test_file.close()
 	return
 def debug_log(*args, **kwargs):
     #print( "YYY "+" ".join(map(str,args))+" YYY", **kwargs)
@@ -81,6 +83,17 @@ def send_cmd_to_sdk(cmd):
 def start_speech_recognition():	
 	speech_recog_start_pipe.write_to_pipe("s")
 
+def convert_to_speech(text):
+	print("HERE HERE HERE HERE HERE")
+	global mute_pipe
+	global unmute_pipe
+	mute_pipe.write_to_pipe('s')
+	os.system("/bin/bash tts.sh " + "\"" + text + "\"")
+	print("Done Done Done Done")
+#	time.sleep(4)
+	unmute_pipe.write_to_pipe('s')
+	return
+
 def payload_thread(name):
 	print('payload start')
 	global recieved_response_signal
@@ -104,17 +117,20 @@ def payload_thread(name):
 				caption = tokens[i+2]
 			if(tokens[i] == 'token'):
 				token_id = tokens[i+2]
+			if(tokens[i] == 'textField'):
+				caption = tokens[i+2]
 		print( ' caption = ' + bcolors.OKBLUE + caption + bcolors.ENDC )
-		print( ' token = ' + token_id )
+		#print( ' token = ' + token_id )
 		current_session.responses.insert_new(caption)
 		recieved_response_signal = True
 		wfr_state_end_pipe.write_to_pipe("s")
+		old_caption = caption
 		log_time('response recieved from sdk' )
 		for ext in extensions_resp_order:
 			if ext not in active_extensions:
 				#print("evaluate: " , ext.name)
 				if(ext.evaluate(current_session)):
-					#print("extension: " + ext.name  +" is true")
+					print("extension: " + ext.name  +" is true")
 					active_extensions.append(ext)
 					ext.sandbox = sandbox_pool.get_idle_sandbox()
 					ext.sandbox.execute(ext.script)
@@ -122,7 +138,7 @@ def payload_thread(name):
 		for ext in extensions_resp_order:
 		#for ext in active_extensions:
 			if ext in active_extensions:
-				#print(" RESP: we need to forward session to extenstion " + ext.name )
+				print(" RESP: we need to forward session to extenstion " + ext.name )
 				session_dict = current_session.get_dictionary()
 				session_dict['req_resp'] = 'resp'
 				ext.sandbox.transfer_data(json.dumps(session_dict))
@@ -130,8 +146,11 @@ def payload_thread(name):
 				#new_caption = ext.sandbox.get_response()
 				new_caption = ext.sandbox.get_response_blocking()
 				if( ext.verify_new_cmd(new_caption)):
-					caption = new_caption
-		#print( ' new caption = ' + bcolors.OKBLUE + caption + bcolors.ENDC )
+                                        caption = new_caption
+                                    #    current_session.responses.update_last(caption)
+		if( caption != old_caption):
+			convert_to_speech(caption)
+		print( ' new caption = ' + bcolors.OKBLUE + caption + bcolors.ENDC )
 		log_time('+++++++++ command end+++++++++')
 		#while (recieved_response_signal == True):
 		#	pass
@@ -169,6 +188,8 @@ def end_session_notice_thread(name):
 	while True:
 		wait_for_end_session_notice()
 		if (( state == "wait_for_listenning") or ( state == "wait_for_response") ):
+			if( state == "wait_for_response"):
+				payload_pipe.write_to_pipe("s")
 			end_session()
 		else:
 			print("somthing is wrong!!")
@@ -201,7 +222,7 @@ def end_session():
 	#wfr_state_end_pipe.write_to_pipe("s")	
 	print(bcolors.FAIL + "*************SESSION ENDS****************"+ bcolors.ENDC)
 	log_time("__________ Session End __________")
-	print(current_session.get_dictionary())
+	#print(current_session.get_dictionary())
 	while (end_session_signal == True):
 		pass
 	return
@@ -238,9 +259,9 @@ def get_user_cmd_and_send_it():
 	if (cmd != 'stop' ):
 		for ext in extensions:
 			if ext not in active_extensions:
-				#print("evaluate: " , ext.name)
+				print("evaluate: " , ext.name)
 				if(ext.evaluate(current_session)):
-					#print("extension: " + ext.name  +" is true")
+					print("extension: " + ext.name  +" is true")
 					active_extensions.append(ext)
 					ext.sandbox = sandbox_pool.get_idle_sandbox()
 					ext.sandbox.execute(ext.script)
@@ -265,7 +286,8 @@ def get_user_cmd_and_send_it():
 			#new_cmd = ext.sandbox.get_response()
 			new_cmd = ext.sandbox.get_response_blocking()
 			if( ext.verify_new_cmd(new_cmd)):
-				cmd = new_cmd
+                                cmd = new_cmd
+                              #  current_session.requests.update_last(cmd)
 			
 		log_time('extention exec done')
 		
@@ -286,13 +308,17 @@ def main():
 	extensions_resp_order = []
 	global active_extensions
 	active_extensions = []
-	extensions.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
-	extensions.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+#	extensions.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
+#	extensions.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+#	extensions.append(Extension('night_mode','./JSONs/night_mode.json' , './scripts/night_mode.py'))
+#	extensions.append(Extension('skill_limiter','./JSONs/skill_limiter.json' , './scripts/skill_limiter.py'))
 	extensions.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
 
 	extensions_resp_order.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
-	extensions_resp_order.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
-	extensions_resp_order.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+#	extensions_resp_order.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
+#	extensions_resp_order.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+#	extensions_resp_order.append(Extension('night_mode','./JSONs/night_mode.json' , './scripts/night_mode.py'))
+#	extensions_resp_order.append(Extension('skill_limiter','./JSONs/skill_limiter.json' , './scripts/skill_limiter.py'))
 	global kwd_pipe 
 	kwd_pipe = MyPipe('keyword_detection')
 	kwd_pipe.make()
@@ -326,6 +352,14 @@ def main():
 	global wfr_state_end_pipe
 	wfr_state_end_pipe = MyPipe('wfr_state_end')
 	wfr_state_end_pipe.make()
+
+	global mute_pipe
+	mute_pipe = MyPipe('mute_pipe')
+	mute_pipe.make()
+
+	global unmute_pipe
+	unmute_pipe = MyPipe('unmute_pipe')
+	unmute_pipe.make()
 
 	print('Starting threads')
 	th1 = threading.Thread(target=payload_thread, args=(1,), daemon=True)

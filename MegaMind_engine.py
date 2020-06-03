@@ -71,7 +71,10 @@ def send_cmd_to_sdk(cmd):
 
 def start_speech_recognition():	
 	speech_recog_start_pipe.write_to_pipe("s")
-
+def convert_to_speech(text):
+	print("HERE HERE HERE HERE HERE")
+	os.system("/bin/bash tts.sh " + "\"" + text + "\"")
+	print("Done Done Done Done")
 def payload_thread(name):
 	print('payload start')
 	global recieved_response_signal
@@ -95,11 +98,14 @@ def payload_thread(name):
 				caption = tokens[i+2]
 			if(tokens[i] == 'token'):
 				token_id = tokens[i+2]
+			if(tokens[i] == 'textField'):
+				caption = tokens[i+2]
 		print( ' caption = ' + bcolors.OKBLUE + caption + bcolors.ENDC )
 		print( ' token = ' + token_id )
 		current_session.responses.insert_new(caption)
 		recieved_response_signal = True
 		wfr_state_end_pipe.write_to_pipe("s")
+		old_caption = caption
 		for ext in extensions_resp_order:
 			if ext not in active_extensions:
 				print("evaluate: " , ext.name)
@@ -120,6 +126,8 @@ def payload_thread(name):
 				new_caption = ext.sandbox.get_response_blocking()
 				if( ext.verify_new_cmd(new_caption)):
 					caption = new_caption
+		if( caption != old_caption):
+			convert_to_speech(caption)
 		print( ' new caption = ' + bcolors.OKBLUE + caption + bcolors.ENDC )
 		#while (recieved_response_signal == True):
 		#	pass
@@ -157,6 +165,8 @@ def end_session_notice_thread(name):
 	while True:
 		wait_for_end_session_notice()
 		if (( state == "wait_for_listenning") or ( state == "wait_for_response") ):
+			if( state == "wait_for_response"):
+				payload_pipe.write_to_pipe("s")
 			end_session()
 		else:
 			print("somthing is wrong!!")
@@ -267,13 +277,15 @@ def main():
 	extensions_resp_order = []
 	global active_extensions
 	active_extensions = []
-	extensions.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
-	extensions.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+#	extensions.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
+#	extensions.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
 	extensions.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
+	extensions.append(Extension('mixer','./JSONs/anonymous.json' , './scripts/anonymous.py'))
 
+	extensions_resp_order.append(Extension('mixer','./JSONs/anonymous.json' , './scripts/anonymous.py'))
 	extensions_resp_order.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
-	extensions_resp_order.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
-	extensions_resp_order.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+#	extensions_resp_order.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
+#	extensions_resp_order.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
 	global kwd_pipe 
 	kwd_pipe = MyPipe('keyword_detection')
 	kwd_pipe.make()

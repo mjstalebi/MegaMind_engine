@@ -4,9 +4,9 @@
     {
       "keywords": {
         "include_or": [
-          "ardalan",
-	  "949",
-	  "javad"
+          "contain_first_name()",
+	  "contain(949)",
+	  "contain_similar(buy)"
         ]
       },
 	  "Skill_ID": {
