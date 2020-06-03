@@ -73,8 +73,14 @@ def start_speech_recognition():
 	speech_recog_start_pipe.write_to_pipe("s")
 def convert_to_speech(text):
 	print("HERE HERE HERE HERE HERE")
+	global mute_pipe
+	global unmute_pipe
+	mute_pipe.write_to_pipe('s')
 	os.system("/bin/bash tts.sh " + "\"" + text + "\"")
 	print("Done Done Done Done")
+#	time.sleep(4)
+	unmute_pipe.write_to_pipe('s')
+	return
 def payload_thread(name):
 	print('payload start')
 	global recieved_response_signal
@@ -319,6 +325,14 @@ def main():
 	global wfr_state_end_pipe
 	wfr_state_end_pipe = MyPipe('wfr_state_end')
 	wfr_state_end_pipe.make()
+
+	global mute_pipe
+	mute_pipe = MyPipe('mute_pipe')
+	mute_pipe.make()
+
+	global unmute_pipe
+	unmute_pipe = MyPipe('unmute_pipe')
+	unmute_pipe.make()
 
 	print('Starting threads')
 	th1 = threading.Thread(target=payload_thread, args=(1,), daemon=True)
