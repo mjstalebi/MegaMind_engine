@@ -1,0 +1,12 @@
+{
+  "type" : "companion",
+  "filters": [
+   {
+      "Skill_ID": {
+        "include_or": [
+          "great bank"
+        ]
+      }
+    }
+   ]
+}
