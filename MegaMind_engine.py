@@ -12,6 +12,7 @@ from Sandbox import Sandbox_pool
 from time import sleep
 import os
 from mypipe import MyPipe
+from MegaNLP import MegaNLP
 
 port_start_speech = consts.PortNumber_start_speech_2
 port_end_speech = consts.PortNumber_end_speech_2
@@ -73,13 +74,13 @@ def start_speech_recognition():
 	speech_recog_start_pipe.write_to_pipe("s")
 def convert_to_speech(text):
 	print("HERE HERE HERE HERE HERE")
-	global mute_pipe
-	global unmute_pipe
-	mute_pipe.write_to_pipe('s')
+#	global mute_pipe
+#	global unmute_pipe
+#	mute_pipe.write_to_pipe('s')
 	os.system("/bin/bash tts.sh " + "\"" + text + "\"")
 	print("Done Done Done Done")
 #	time.sleep(4)
-	unmute_pipe.write_to_pipe('s')
+#	unmute_pipe.write_to_pipe('s')
 	return
 def payload_thread(name):
 	print('payload start')
@@ -98,6 +99,7 @@ def payload_thread(name):
 	#	print('tokens = ')
 	#	print(tokens)
 		caption = ' caption not found'
+		new_caption = ''
 		token_id = 'token not found'
 		for i in range(1,len(tokens)):
 			if(tokens[i] == 'caption'):
@@ -132,8 +134,8 @@ def payload_thread(name):
 				new_caption = ext.sandbox.get_response_blocking()
 				if( ext.verify_new_cmd(new_caption)):
 					caption = new_caption
-		if( caption != old_caption):
-			convert_to_speech(caption)
+	#	if( caption != old_caption):
+		convert_to_speech(caption)
 		print( ' new caption = ' + bcolors.OKBLUE + caption + bcolors.ENDC )
 		#while (recieved_response_signal == True):
 		#	pass
@@ -182,7 +184,8 @@ def start_session():
 	global start_session_signal
 	global first_req_of_session
 	global current_session
-	current_session = Session()
+	global nlp
+	current_session = Session(nlp)
 	current_session.speaker_id = 'Mohammad'
 	start_session_signal = True
 	print(bcolors.FAIL + "*************NEW SESSION****************"+ bcolors.ENDC)
@@ -215,10 +218,12 @@ def local_skill_id_finder(cmd):
 		return "built-in"
 def get_user_cmd_and_send_it():
 	global first_req_of_session
+	global first_req_ever
 	global current_session
 	global extensions
 	global active_extensions
 	global sandbox_pool 
+	global mute_pipe
 	start_speech_recognition()
 	cmd = wait_for_speech_recognition_done()
 	cmd = cmd.rstrip()
@@ -229,6 +234,10 @@ def get_user_cmd_and_send_it():
 	cmd = cmd.replace('!','')
 	cmd = cmd.replace('?','')
 	cmd = cmd.lower()
+	if(first_req_ever == True):
+		mute_pipe.write_to_pipe('s')
+		first_req_ever = False
+		
 	if(first_req_of_session == True):
 		print( bcolors.FAIL +" first req of session call local skill_id finder" + bcolors.ENDC)
 		first_req_of_session = False
@@ -285,11 +294,13 @@ def main():
 	active_extensions = []
 #	extensions.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
 #	extensions.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
-	extensions.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
-	extensions.append(Extension('mixer','./JSONs/anonymous.json' , './scripts/anonymous.py'))
+#	extensions.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
+	extensions.append(Extension('bank','./JSONs/bank.json' , './scripts/bank.py'))
+#	extensions.append(Extension('mixer','./JSONs/anonymous.json' , './scripts/anonymous.py'))
 
-	extensions_resp_order.append(Extension('mixer','./JSONs/anonymous.json' , './scripts/anonymous.py'))
-	extensions_resp_order.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
+#	extensions_resp_order.append(Extension('mixer','./JSONs/anonymous.json' , './scripts/anonymous.py'))
+	extensions_resp_order.append(Extension('bank','./JSONs/bank.json' , './scripts/bank.py'))
+#	extensions_resp_order.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
 #	extensions_resp_order.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
 #	extensions_resp_order.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
 	global kwd_pipe 
@@ -350,8 +361,12 @@ def main():
 	global recieved_response_signal
 	global current_session
 	global sandbox_pool 
+	global first_req_ever
+	global nlp
+	first_req_ever = True
 	sandbox_pool = Sandbox_pool(10)	
 	sandbox_pool.initialize()
+	nlp = MegaNLP()
 	while True:
 		while ( state == "idle" ):
 			idle_state_end_pipe.wait_on_pipe()

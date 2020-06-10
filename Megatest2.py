@@ -13,6 +13,10 @@ from time import sleep
 import os
 from mypipe import MyPipe
 import time
+from MegaNLP import MegaNLP
+
+import subprocess
+
 
 port_start_speech = consts.PortNumber_start_speech_2
 port_end_speech = consts.PortNumber_end_speech_2
@@ -87,11 +91,19 @@ def convert_to_speech(text):
 	print("HERE HERE HERE HERE HERE")
 	global mute_pipe
 	global unmute_pipe
-	mute_pipe.write_to_pipe('s')
-	os.system("/bin/bash tts.sh " + "\"" + text + "\"")
+#	mute_pipe.write_to_pipe('s')
+#	os.system("/bin/bash tts.sh " + "\"" + text + "\"")
+#	subprocess.Popen(['/usr/bin/pico2wave','-w=/tmp/test.wav','\"' + text +'\"'])
+#	subprocess.Popen(['/usr/bin/play','/tmp/test.wav'])
+#	subprocess.Popen(['/bin/rm','/tmp/test.wav'])
+	subprocess.call(['/usr/bin/pico2wave','-w=/tmp/test.wav','\"' + text +'\"'])
+#	subprocess.call(['/usr/bin/play', '-qV0','/tmp/test.wav','treble','24','gain','-6'])
+	subprocess.call(['/usr/bin/play', '/tmp/test.wav'])
+	subprocess.call(['/bin/rm','/tmp/test.wav'])
+
 	print("Done Done Done Done")
 #	time.sleep(4)
-	unmute_pipe.write_to_pipe('s')
+#	unmute_pipe.write_to_pipe('s')
 	return
 
 def payload_thread(name):
@@ -119,6 +131,9 @@ def payload_thread(name):
 				token_id = tokens[i+2]
 			if(tokens[i] == 'textField'):
 				caption = tokens[i+2]
+		caption = caption.replace('\n','')
+#		caption = caption.replace('f\'uck','bleep')
+
 		print( ' caption = ' + bcolors.OKBLUE + caption + bcolors.ENDC )
 		#print( ' token = ' + token_id )
 		current_session.responses.insert_new(caption)
@@ -148,8 +163,7 @@ def payload_thread(name):
 				if( ext.verify_new_cmd(new_caption)):
                                         caption = new_caption
                                     #    current_session.responses.update_last(caption)
-		if( caption != old_caption):
-			convert_to_speech(caption)
+		convert_to_speech(caption)
 		print( ' new caption = ' + bcolors.OKBLUE + caption + bcolors.ENDC )
 		log_time('+++++++++ command end+++++++++')
 		#while (recieved_response_signal == True):
@@ -172,7 +186,8 @@ def start_session_notice_thread(name):
 	print("start_session_notice_thread")
 	while True:
 		wait_for_start_session_notice()
-		print("start_session_notice recieved")
+		print(bcolors.OKGREEN + "start_session_notice recieved" + bcolors.ENDC)
+
 		if ( state == "idle"):
 			start_session()
 		else:
@@ -187,6 +202,7 @@ def end_session_notice_thread(name):
 	print("end_session_notice_thread")
 	while True:
 		wait_for_end_session_notice()
+		print(bcolors.OKGREEN + "end_session_notice recieved" + bcolors.ENDC)
 		if (( state == "wait_for_listenning") or ( state == "wait_for_response") ):
 			if( state == "wait_for_response"):
 				payload_pipe.write_to_pipe("s")
@@ -199,7 +215,8 @@ def start_session():
 	global start_session_signal
 	global first_req_of_session
 	global current_session
-	current_session = Session()
+	global nlp
+	current_session = Session(nlp)
 	current_session.speaker_id = 'Mohammad'
 	start_session_signal = True
 	print(bcolors.FAIL + "*************NEW SESSION****************"+ bcolors.ENDC)
@@ -238,6 +255,8 @@ def get_user_cmd_and_send_it():
 	global extensions
 	global active_extensions
 	global sandbox_pool 
+	global mute_pipe
+	global first_req_ever
 	start_speech_recognition()
 	cmd = wait_for_speech_recognition_done()
 	cmd = cmd.rstrip()
@@ -248,6 +267,9 @@ def get_user_cmd_and_send_it():
 	cmd = cmd.replace('!','')
 	cmd = cmd.replace('?','')
 	cmd = cmd.lower()
+	if(first_req_ever == True):
+		mute_pipe.write_to_pipe('s')
+		first_req_ever = False
 	log_time('+++++++++ command started+++++++++')
 	if(first_req_of_session == True):
 		print( bcolors.FAIL +" first req of session call local skill_id finder" + bcolors.ENDC)
@@ -309,14 +331,18 @@ def main():
 	global active_extensions
 	active_extensions = []
 #	extensions.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
+#	extensions.append(Extension('bank','./JSONs/bank.json' , './scripts/bank.py'))
 #	extensions.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
 #	extensions.append(Extension('night_mode','./JSONs/night_mode.json' , './scripts/night_mode.py'))
 #	extensions.append(Extension('skill_limiter','./JSONs/skill_limiter.json' , './scripts/skill_limiter.py'))
-	extensions.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
+#	extensions.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
+	extensions.append(Extension('mixer','./JSONs/anonymous.json' , './scripts/anonymous.py'))
 
-	extensions_resp_order.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
+	extensions_resp_order.append(Extension('mixer','./JSONs/anonymous.json' , './scripts/anonymous.py'))
+#	extensions_resp_order.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
 #	extensions_resp_order.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
-#	extensions_resp_order.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+	#extensions_resp_order.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+#	extensions_resp_order.append(Extension('bank','./JSONs/bank.json' , './scripts/bank.py'))
 #	extensions_resp_order.append(Extension('night_mode','./JSONs/night_mode.json' , './scripts/night_mode.py'))
 #	extensions_resp_order.append(Extension('skill_limiter','./JSONs/skill_limiter.json' , './scripts/skill_limiter.py'))
 	global kwd_pipe 
@@ -378,9 +404,13 @@ def main():
 	global current_session
 	global sandbox_pool 
 	global test_file
+	global first_req_ever
+	global nlp
+	first_req_ever = True
 	test_file = open('/tmp/MegsTST.txt','w+')
 	sandbox_pool = Sandbox_pool(10)	
 	sandbox_pool.initialize()
+	nlp = MegaNLP()
 	while True:
 		while ( state == "idle" ):
 			idle_state_end_pipe.wait_on_pipe()

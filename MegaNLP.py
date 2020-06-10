@@ -24,6 +24,12 @@ class MegaNLP:
         for line in lines:
            line = line.rstrip()
            self.last_name_array.append(line)
+        f= open('bad_words.txt','r')
+        lines = f.readlines()
+        self.profane_words_array = []
+        for line in lines:
+           line = line.rstrip()
+           self.profane_words_array.append(line)
 
 
      
@@ -61,12 +67,28 @@ class MegaNLP:
        else:
           return True 
 
+    def is_profane_word(self, name):
+       name = name.replace('\'','')
+       result = self.binarySearch(self.profane_words_array, name) 
+       if (result == -1): 
+          return False
+       else:
+          return True 
     def find_first_names(self, mystr):
        sent = mystr.split()
        sent = self.remove_common_words(sent)
        names = []
        for word in sent:
            if( self.is_first_name(word)):
+               names.append(word)
+       return names
+
+    def find_profane_words(self, mystr):
+       sent = mystr.split()
+       sent = self.remove_common_words(sent)
+       names = []
+       for word in sent:
+           if( self.is_profane_word(word)):
                names.append(word)
        return names
 

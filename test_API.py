@@ -75,9 +75,9 @@ def main():
 	th1 = threading.Thread(target=wait_for_listenning_thread, args=(1,), daemon=True)
 	th1.start()
 	ds = DeepSpeech()
-	testid = 'secret'
+	testid = 'mixer'
 	testno = 1
-	total_tests = 5
+	total_tests = 3
 	test_path_base = '/home/megamind/MegaMind/experiments/single_extention/'
 	test_path = test_path_base + testid
 	test_file_time = test_path + '/' + 'time_' + test_try + '.txt'
@@ -110,7 +110,7 @@ def main():
 					os.system('cp /tmp/MegaCPU.txt ' + test_file_cpu)
 					os.system('python3.7 ' + test_path_base + 'parse.py ' + test_file_time)
 				else:
-                                        #time.sleep(3)
+                                        time.sleep(3)
                                         cmd = ds.convert(testid , str(testno))
                                         if( testid == 'redact' or testid == 'multi'):
                                             if ('repeat'  not in cmd):

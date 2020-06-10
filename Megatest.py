@@ -302,12 +302,14 @@ def main():
 	global active_extensions
 	active_extensions = []
 #	extensions.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
-	extensions.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+#	extensions.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
 #	extensions.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
+	extensions.append(Extension('mixer','./JSONs/mixer.json' , './scripts/mixer.py'))
 
+	extensions_resp_order.append(Extension('mixer','./JSONs/mixer.json' , './scripts/mixer.py'))
 #	extensions_resp_order.append(Extension('secret','./JSONs/secret.json' , './scripts/secret.py'))
 #	extensions_resp_order.append(Extension('parental','./JSONs/parental.json' , './scripts/parental.py'))
-	extensions_resp_order.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
+#	extensions_resp_order.append(Extension('redact','./JSONs/redact.json' , './scripts/redact.py'))
 	print('Starting threads')
 	th1 = threading.Thread(target=payload_thread, args=(1,), daemon=True)
 	th1.start()

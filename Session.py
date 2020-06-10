@@ -65,7 +65,7 @@ class Items:
 				
 			
 class Session:
-	def __init__(self):
+	def __init__(self,mynlp):
 		self.requests = Items()
 		self.responses = Items()
 		self.speaker_id = "ND"
@@ -74,7 +74,7 @@ class Session:
 		mytime.set_now()
 		self.time = mytime
 		self.dictionary = {}
-		self.nlp = MegaNLP()
+		self.nlp = mynlp
 	def get_dictionary(self):
 		self.dictionary['requests'] = self.requests.get_dictionary()
 		self.dictionary['responses'] = self.responses.get_dictionary()
@@ -112,6 +112,8 @@ class Session:
 			return self.nlp.find_synonym(nlp_parts[1],last_req)
 		if( nlp_parts[0] == 'contain_antonym'):
 			return self.nlp.find_antonyms(nlp_parts[1],last_req)
+		if( nlp_parts[0] == 'contain_profanity'):
+			return self.nlp.find_profane_words(last_req)
 		return ret 
 	def evaluate_filter(self, filter_dict ):
 		debug_log('\n---------------')

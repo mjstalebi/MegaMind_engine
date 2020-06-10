@@ -4,9 +4,7 @@
     {
       "keywords": {
         "include_or": [
-          "contain_first_name()",
-	  "contain(949)",
-	  "contain_similar(buy)"
+          "contain_profanity()"
         ]
       },
 	  "Skill_ID": {

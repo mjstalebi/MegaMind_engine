@@ -16,8 +16,7 @@ while True:
 	#pr(session)
 	item = comm.get_item_of_interest(session)
 	print(item)
-	item = item.replace('john','bob')
-	item = item.replace('jack','alex')
+	item = item.replace('f\'uck','bleep')
 	comm.write_response(item)
 	#comm.update_ready(True)
 
