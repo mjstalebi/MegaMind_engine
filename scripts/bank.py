@@ -15,6 +15,8 @@ from cryptography.hazmat.primitives.ciphers.modes import CBC,OFB,CFB
 from hashlib import sha3_256
 from os import urandom
 from cryptography.hazmat.backends import default_backend
+
+import hmac
 backend = default_backend()
 
 
@@ -62,32 +64,53 @@ s1 = (str1.replace('=' , '')).lower()
 
 def pr(*args , **kwargs):
 	print( '**** ' + " ".join(map(str,args)) + " ****" , **kwargs)
+
 def encrypt_request(req):
-	cypher = AES_engine.encrypt(req)
-	coded_cypher = base64.b32encode(cypher)
-#	print('[1]', coded_cypher)
-	coded_cypher = coded_cypher.decode().replace('=','').lower()
-#	print('[2]',coded_cypher)
-	return coded_cypher
+        cypher = AES_engine.encrypt(req)
+        digest = hmac.new(AES_KEY, cypher, sha3_256).digest()
+        print(digest)
+        coded_digest = base64.b32encode(digest)
+        coded_cypher = base64.b32encode(cypher)
+#       print('[1]', coded_cypher)
+        coded_cypher = coded_cypher.decode().replace('=','').lower()
+        coded_digest = coded_digest.decode().replace('=','').lower()
+        print(coded_digest)
+#       print('[2]',coded_cypher)
+        return coded_cypher + '8' + coded_digest
 
 
 def decrypt_response(resp):
-	old_resp = resp
-	l = len(resp)
-	r = l % 8
-	if( r != 0):
-		for i in range(0,8-r):
-			resp = resp + '='
-	try:
-		cypher_text = resp.upper()
-	#	print(cypher_text)
-		cypher_text_bytes = base64.b32decode(cypher_text)
-	#	print(cypher_text_bytes)
-		plain_text = AES_engine.decrypt(cypher_text_bytes)
-	except:
-		plain_text = old_resp
-	return plain_text
+        index = resp.find('8')
+        new_resp = resp[0:index]
+        hash_resp = resp[index+1:]
+        resp = new_resp
+        old_resp = resp
+        l = len(resp)
+        r = l % 8
+        if( r != 0):
+                for i in range(0,8-r):
+                        resp = resp + '='
+        l = len(hash_resp)
+        r = l % 8
+        if( r != 0):
+                for i in range(0,8-r):
+                        hash_resp = hash_resp + '='
+        hash_text = hash_resp.upper()
 
+        try:
+                cypher_text = resp.upper()
+        #       print(cypher_text)
+                cypher_text_bytes = base64.b32decode(cypher_text)
+        #       print(cypher_text_bytes)
+                digest = hmac.new(AES_KEY, cypher_text_bytes, sha3_256).digest()
+                coded_digest = base64.b32encode(digest)
+                coded_digest = coded_digest.decode()
+                if(coded_digest != hash_text):
+                        return 'HMAC does not match'
+                plain_text = AES_engine.decrypt(cypher_text_bytes)
+        except:
+                plain_text = old_resp
+        return plain_text
 
 
 pr("secret chat extention")
